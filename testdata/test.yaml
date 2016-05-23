@@ -1,0 +1,19 @@
+yamlscalar : foo
+yamlsequence :
+  - bar
+  - baz
+  - qux
+yamlnestedsequences:
+  - [cat, dog, mouse]
+  - [goat, cow, horse]
+  - [tina, louise, gene]
+yamlseqofmaps:
+  -
+    name: archer
+    job: field agent
+  -
+    name: barry
+    job: evil cyborg
+  -
+    name: woodhouse
+    job: itchy butler
