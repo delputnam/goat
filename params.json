@@ -1,0 +1,6 @@
+{
+  "name": "Goat",
+  "tagline": "A simple little app that reads in JSON, YAML, or TOML data and uses it to execute Go templates.",
+  "body": "### Why \"Goat\"\r\nUm....maybe because *GO* *A*nd *T*emplates.",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}
