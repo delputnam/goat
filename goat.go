@@ -1,28 +1,37 @@
 package main
 
 import (
+	"errors"
 	"flag"
+	htemplate "html/template"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
-	"text/template"
+	ttemplate "text/template"
 
 	"github.com/delputnam/parser"
 )
 
 var usage = `
-USAGE: goat -template TemplateFileName.tpl [-in InputFilename.txt] [-format (input file format)] [-out OutputFilename.txt]
+USAGE: goat -template TemplateFileName.tpl [-in InputFilename.txt] [-informat (input file format)] [-out OutputFilename.txt] [-outformat (text|html)]
 
 Note: The format of the input file is determined by the extension of the input filename, but can be overridden by using the '-format' option. This option is required if the input comes from Stdin.
 `
+
+var (
+	// ErrUnknownParser is an error indicating that a parser for the requested
+	// inputType is not registered.
+	errUnknownOutputType = errors.New("goat: invalid output type specified, must be 'text' or 'html'")
+)
 
 type goat struct {
 	templFilename string
 	inFilename    string
 	inFileType    string
 	outFilename   string
+	outFileType   string
 	in            *os.File
 	out           *os.File
 	template      string
@@ -36,8 +45,9 @@ func main() {
 
 	flag.StringVar(&g.templFilename, "template", "", "the template file to use")
 	flag.StringVar(&g.inFilename, "in", "", "the input file to use, defaults to Stdin if not set")
-	flag.StringVar(&g.inFileType, "format", "", "Override the input file format. (This is otherwise determined by the file extension.)")
-	flag.StringVar(&g.outFilename, "out", "", "the output file to use, defaults to Stdout if not set")
+	flag.StringVar(&g.inFileType, "informat", "", "override the input file format. (This is otherwise determined by the file extension.)")
+	flag.StringVar(&g.outFilename, "out", "", "the output filename to use, defaults to Stdout if not set")
+	flag.StringVar(&g.outFileType, "outformat", "text", "the output format (text|html), defaults to text.")
 	flag.Parse()
 
 	if g.templFilename == "" {
@@ -111,9 +121,22 @@ func main() {
 	}
 
 	// execute the template
-	t := template.Must(template.New("goat").Parse(g.template))
-	err = t.Execute(g.out, data)
-	if err != nil {
-		log.Fatal(err)
+	switch g.outFileType {
+	case "text":
+		t := ttemplate.Must(ttemplate.New("goat").Parse(g.template))
+		err = t.Execute(g.out, data)
+		if err != nil {
+			log.Fatal(err)
+		}
+		break
+	case "html":
+		t := htemplate.Must(htemplate.New("goat").Parse(g.template))
+		err = t.Execute(g.out, data)
+		if err != nil {
+			log.Fatal(err)
+		}
+		break
+	default:
+		log.Fatal(errUnknownOutputType)
 	}
 }
