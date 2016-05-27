@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"flag"
+	"fmt"
 	htemplate "html/template"
 	"io/ioutil"
 	"log"
@@ -13,12 +14,6 @@ import (
 
 	"github.com/delputnam/parser"
 )
-
-var usage = `
-USAGE: goat -template TemplateFileName.tpl [-in InputFilename.txt] [-informat (input file format)] [-out OutputFilename.txt] [-outformat (text|html)]
-
-Note: The format of the input file is determined by the extension of the input filename, but can be overridden by using the '-format' option. This option is required if the input comes from Stdin.
-`
 
 var (
 	// ErrUnknownParser is an error indicating that a parser for the requested
@@ -41,17 +36,24 @@ type goat struct {
 
 func main() {
 
+	flag.Usage = func() {
+		fmt.Printf("Usage of %s:\n", os.Args[0])
+		flag.PrintDefaults()
+	}
+
 	var g goat
 
 	flag.StringVar(&g.templFilename, "template", "", "the template file to use")
 	flag.StringVar(&g.inFilename, "in", "", "the input file to use, defaults to Stdin if not set")
-	flag.StringVar(&g.inFileType, "informat", "", "override the input file format. (This is otherwise determined by the file extension.)")
+	flag.StringVar(&g.inFileType, "informat", "", "override the input file format. (This is otherwise determined by the file extension and is required if the input comes from Stdin.)")
 	flag.StringVar(&g.outFilename, "out", "", "the output filename to use, defaults to Stdout if not set")
 	flag.StringVar(&g.outFileType, "outformat", "text", "the output format (text|html), defaults to text.")
 	flag.Parse()
 
 	if g.templFilename == "" {
-		log.Fatal("Error: No template file was specified." + usage)
+		log.Print("Error: No template file was specified.")
+		flag.Usage()
+		os.Exit(1)
 	} else {
 		f, err := os.Open(g.templFilename)
 		if err != nil {
@@ -72,7 +74,9 @@ func main() {
 
 		// must specify --format flag if using Stdin
 		if g.inFileType == "" {
-			log.Fatal("Error: must specify input type when data comes from Stdin.")
+			log.Print("Error: must specify input type when data comes from Stdin.")
+			flag.Usage()
+			os.Exit(1)
 		}
 	} else {
 		// open file specified by --in flag
